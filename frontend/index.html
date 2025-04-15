@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Roboto+Condensed&display=swap" rel="stylesheet">
+    <title>GamelanFE</title>
+    <style>
+        html, body {
+            background-color: transparent;
+            font-family: "Roboto Mono", monospace;
+        }
+        .grid-container {
+            padding-top: 10px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .grid-wrapper {
+            border: 1px solid rgb(30, 30, 30);
+            padding: 10px;
+            border-radius: 8px;
+            background: #282828;
+            box-shadow: 0 7px 7px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            color: aliceblue;
+        }
+
+        .grid-header h3 p {
+            color: white;
+            font-size: 5px;
+        }
+
+        .add-grid-button {
+            padding: 7px 10px;
+            background: #4074d9;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            /*margin: 10px;*/
+        }
+
+        .close-button {
+            padding: 5px 10px;
+            background: #d73a22;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 7pt;
+        }
+    </style>
+</head>
+<body>
+<div id="main-container">
+    <button class="add-grid-button">&#10010;</button>
+    <div class="grid-container"></div>
+</div>
+<script>
+    class MatrixStream {
+        constructor(defaultSize = 5) {
+            this.matrices = new Map()
+            this.nextId = 1
+        }
+
+        async addMatrix() {
+            const id = this.nextId++
+            const matrix = {
+                id,
+                edges: new Set(),
+                size: { rows: this.defaultSize, cols: this.defaultSize },
+            }
+            this.matrices.set(id, matrix)
+            console.log(this.matrices)
+            return id
+        }
+
+        async updateMatrix(id, edges) {
+            const matrix = this.matrices.get(id);
+            if (matrix) {
+                // Store edges directly as {start, end} pairs
+                matrix.edges = new Set(edges.map(edge => ({
+                    start: { x: edge.start.x, y: edge.start.y },
+                    end: { x: edge.end.x, y: edge.end.y }
+                })));
+                console.log('matrices: ', this.matrices)
+                return true;
+            }
+            return false;
+        }
+
+        async removeMatrix(id) {
+            return this.matrices.delete(id)
+        }
+
+        getMatrix(id) {
+            return this.matrices.get(id)
+        }
+    }
+
+    const DEFAULT_GRID_CONFIG = {
+        gridSize: 5,
+        cellSize: 25,
+        canvasWidth: 125,
+        canvasHeight: 125,
+        nodeColor: 'rgb(160,184,73)',
+        edgeColor: 'rgb(160,184,73)',
+        gridLineColor: '#333333',
+        gridLineWidth: 2,
+        edgeLineWidth: 12.5,
+        nodeRadiusFraction: 0.25,
+    }
+
+    class Grid {
+        constructor(container, config, id, matrixStream) {
+            this.matrixStream = matrixStream
+
+            this.id = id;
+            this.config = { ...config };
+            this.nodes = new Set();
+            this.edges = [];
+            this.dragging = null;
+
+            // Create DOM elements
+            this.element = document.createElement('div');
+            this.element.className = 'grid-wrapper';
+
+            this.element.innerHTML = `
+          <div class="grid-header">
+            <h3>#${id}</h3>
+            <button class="close-button">Delete</button>
+          </div>
+        `;
+
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = config.canvasWidth;
+            this.canvas.height = config.canvasHeight;
+            this.element.appendChild(this.canvas);
+
+            container.appendChild(this.element);
+
+            // Initialize canvas
+            this.ctx = this.canvas.getContext('2d');
+            this.drawGrid();
+
+            // Event listeners
+            this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+            this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+            this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+            this.element.querySelector('.close-button').addEventListener('click', () => {
+                this.element.remove();
+            });
+        }
+
+        async updateStream() {
+            await this.matrixStream.updateMatrix(this.id, this.edges);
+        }
+
+        handleNodeCreation(pos) {
+            const key = this.posToKey(pos);
+            if (!this.nodes.has(key)) {
+                this.nodes.add(key);
+                this.redraw();
+            }
+        }
+
+        handleEdgeCreation(start, end) {
+            const startKey = this.posToKey(start);
+            const endKey = this.posToKey(end);
+
+            if (this.nodes.has(startKey)) {
+                this.nodes.add(endKey);
+                // Store edge in {start, end} format
+                this.edges.push({
+                    start: { x: start.x, y: start.y },
+                    end: { x: end.x, y: end.y }
+                });
+                this.updateStream(); // Update stream here
+            }
+        }
+
+        drawGrid() {
+            this.ctx.fillStyle = 'rgb(40,40,40)';
+            this.ctx.strokeStyle = this.config.gridLineColor;
+            this.ctx.lineWidth = this.config.gridLineWidth;
+
+            for (let i = 0; i <= this.config.gridSize; i++) {
+                const pos = i * this.config.cellSize;
+
+                // Vertical lines
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos, 0);
+                this.ctx.lineTo(pos, this.config.canvasHeight);
+                this.ctx.stroke();
+
+                // Horizontal lines
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, pos);
+                this.ctx.lineTo(this.config.canvasWidth, pos);
+                this.ctx.stroke();
+            } 
+        }
+
+        getGridPosition(event) {
+            const rect = this.canvas.getBoundingClientRect();
+            const maxIndex = this.config.gridSize - 1;
+
+            return {
+                x: Math.max(0, Math.min(
+                    Math.floor((event.clientX - rect.left) / this.config.cellSize),
+                    maxIndex
+                )),
+                y: Math.max(0, Math.min(
+                    Math.floor((event.clientY - rect.top) / this.config.cellSize),
+                    maxIndex
+                ))
+            };
+        }
+
+        handleMouseDown(event) {
+            const pos = this.getGridPosition(event);
+            this.dragging = { start: pos, current: pos };
+            this.handleNodeCreation(pos);
+        }
+
+        handleMouseMove(event) {
+            if (!this.dragging) return;
+            this.dragging.current = this.getGridPosition(event);
+            this.redraw();
+        }
+
+        handleMouseUp() {
+            if (!this.dragging) return;
+
+            const { start, current: end } = this.dragging;
+            if (!this.samePosition(start, end)) {
+                this.handleEdgeCreation(start, end);
+            }
+
+            this.dragging = null;
+            this.redraw();
+        }
+
+        clearCanvas() {
+            this.ctx.clearRect(0, 0, this.config.canvasWidth, this.config.canvasHeight);
+        }
+
+        drawAllEdges() {
+            this.edges.forEach(edge => this.drawEdge(edge));
+        }
+
+        drawTemporaryEdge() {
+            if (this.dragging) {
+                this.drawEdge({
+                    start: this.dragging.start,
+                    end: this.dragging.current
+                });
+            }
+        }
+
+        drawEdge(edge) {
+            const cellSize = this.config.cellSize;
+            const startX = (edge.start.x + 0.5) * cellSize;
+            const startY = (edge.start.y + 0.5) * cellSize;
+            const endX = (edge.end.x + 0.5) * cellSize;
+            const endY = (edge.end.y + 0.5) * cellSize;
+
+            // Create gradient
+            const gradient = this.ctx.createLinearGradient(
+                startX, startY,
+                endX, endY
+            );
+
+            // Gradient from red (start) to original color (end)
+            gradient.addColorStop(0, this.config.edgeColor); // End color
+            gradient.addColorStop(1, 'rgba(42,42,42,0.3)'); // Start color
+
+            // Draw gradient line
+            this.ctx.strokeStyle = gradient;
+            this.ctx.lineWidth = this.config.edgeLineWidth;
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.lineTo(endX, endY);
+            this.ctx.stroke();
+        }
+
+        drawNode(pos) {
+            const cellSize = this.config.cellSize;
+            const x = (pos.x + 0.5) * cellSize;
+            const y = (pos.y + 0.5) * cellSize;
+            const radius = cellSize * this.config.nodeRadiusFraction;
+
+            // Regular node (circle)
+            this.ctx.fillStyle = this.config.nodeColor;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
+        samePosition(a, b) {
+            return a.x === b.x && a.y === b.y;
+        }
+
+        posToKey(pos) {
+            return `${pos.x},${pos.y}`;
+        }
+
+        keyToPos(key) {
+            const [x, y] = key.split(',').map(Number);
+            return { x, y };
+        }
+
+        drawAllNodes() {
+            this.nodes.forEach(key => {
+                const pos = this.keyToPos(key);
+                this.drawNode(pos);
+            });
+        }
+
+        redraw() {
+            this.clearCanvas();
+            this.drawGrid();
+            this.drawAllEdges();
+            this.drawTemporaryEdge();
+            this.drawAllNodes();
+        }
+
+    }
+
+    // Initialize application
+    const matrixStream = new MatrixStream(5);
+    const gridContainer = document.querySelector('.grid-container');
+
+    document.querySelector('.add-grid-button').addEventListener('click', async () => {
+        const matrixId = await matrixStream.addMatrix();
+        new Grid(gridContainer, DEFAULT_GRID_CONFIG, matrixId, matrixStream);
+    });
+</script>
+</body>
+</html>
