@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .dragger-container {
+            width: 100%;
+            /* Add this to your CSS */
+            min-width: 330px;
+            /* Add minimum width */
+            font-family: Arial, sans-serif;
+        }
+
+        .track {
+            height: 20px;
+            background: #292929;
+            position: relative;
+            /* border-radius: 10px;*/
+            cursor: pointer;
+        }
+
+        .sector {
+            height: 100%;
+            border-right: 4px solid #444444;
+            display: inline-block;
+            box-sizing: border-box;
+        }
+
+        .handle {
+            width: 10px;
+            height: 30px;
+            background: rgb(160, 184, 73);
+            position: absolute;
+            top: -2px;
+            cursor: grab;
+            border-radius: 4px;
+            transition: transform 0.2s;
+            margin-left: 10px;
+        }
+
+        .handle:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+
+        .output {
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dragger-container">
+        <div id="dragger"></div>
+        <div class="output" id="output"></div>
+    </div>
+
+    <script>
+        let currentDragger = null
+
+        class Dragger {
+            constructor(containerElement, sectors) {
+                this.container = containerElement;
+                this.sectors = sectors;
+                this.output = document.getElementById('output'); // Added output reference
+
+                // Set container width to ensure proper calculations
+                this.container.style.width = '100%'; // Added container width constraint
+
+                // Calculate sector length based on container width
+                const containerWidth = this.container.offsetWidth;
+                this.sectorLength = Math.floor(containerWidth / this.sectors);
+                this.totalWidth = this.sectors * this.sectorLength;
+
+                // Clear previous elements
+                this.container.innerHTML = '';
+
+                // Create track element with proper positioning
+                this.track = document.createElement('div');
+                this.track.className = 'track';
+                this.track.style.width = `${this.totalWidth}px`;
+                this.track.style.position = 'relative'; // Added positioning context
+
+                // Create sectors
+                this.sectorElements = Array.from({ length: sectors }, () => {
+                    const sector = document.createElement('div');
+                    sector.className = 'sector';
+                    sector.style.width = `${this.sectorLength}px`;
+                    return sector;
+                });
+
+                // Create handle with proper initial positioning
+                this.handle = document.createElement('div');
+                this.handle.className = 'handle';
+                this.handle.style.position = 'absolute'; // Explicit positioning
+                this.handle.style.marginLeft = '10'; // Remove conflicting margin
+
+                // Append elements
+                this.track.append(...this.sectorElements);
+                this.container.append(this.track, this.handle);
+
+                // Initialize position and events
+                this.currentPosition = 0;
+                this.isDragging = false;
+                this.setupEvents();
+                this.updatePosition(0);
+            }
+
+            setupEvents() {
+                this.handle.addEventListener('mousedown', this.startDrag.bind(this));
+                document.addEventListener('mousemove', this.drag.bind(this));
+                document.addEventListener('mouseup', this.stopDrag.bind(this));
+                this.track.addEventListener('click', this.jumpToPosition.bind(this));
+            }
+
+            destroy() {
+                // Clean up event listeners
+                this.handle.removeEventListener('mousedown', this.startDrag);
+                document.removeEventListener('mousemove', this.drag);
+                document.removeEventListener('mouseup', this.stopDrag);
+                this.track.removeEventListener('click', this.jumpToPosition);
+                this.container.innerHTML = '';
+            }
+
+            startDrag(e) {
+                this.isDragging = true;
+                this.handle.style.cursor = 'grabbing';
+            }
+
+            drag(e) {
+                if (!this.isDragging) return;
+                const rect = this.track.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                this.updatePosition(x);
+            }
+
+            stopDrag() {
+                this.isDragging = false;
+                this.handle.style.cursor = 'grab';
+            }
+
+            setTheNumberOfSectors(num) {
+                this.sectors = num
+            }
+
+            jumpToPosition(e) {
+                const rect = this.track.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                this.updatePosition(x);
+            }
+
+            updatePosition(x) {
+                // Clamp position between 0 and total width
+                this.currentPosition = Math.max(0, Math.min(x, this.totalWidth));
+
+                // Update handle position
+                this.handle.style.left = `${this.currentPosition - 10}px`;
+
+                // Calculate sector and coefficient
+                const currentSector = Math.floor(this.currentPosition / this.sectorLength);
+                const positionInSector = this.currentPosition % this.sectorLength;
+                const coefficient = positionInSector / this.sectorLength;
+
+                // Update output
+                this.output.textContent =
+                    `Sector: ${currentSector}, Coefficient: ${coefficient.toFixed(2)}`;
+
+                window.max.outlet(`transpose ${currentSector} ${currentSector + 1} ${coefficient.toFixed(2)}`)
+            }
+        }
+
+        /* // Create new instance
+        const numOfSectors = 3
+        const container = document.getElementById('dragger');
+        currentDragger = new Dragger(container, numOfSectors); */
+
+
+        window.max.getDict("MatrDict", (dict) => {
+            // console.log("works")
+            const numOfSectors = Object.keys(dict.matrices).length; // For testing, keep this hardcoded
+            console.log(numOfSectors)
+
+            // Clean up existing instance properly
+            if (currentDragger) {
+                currentDragger.destroy();
+                currentDragger = null;
+            }
+
+            // Create new instance
+            const container = document.getElementById('dragger');
+            currentDragger = new Dragger(container, numOfSectors);
+
+            // Add error handling
+            if (!currentDragger) {
+                console.error('Failed to create Dragger');
+                window.max.outlet('error creating dragger');
+            }
+        });
+    </script>
+</body>
+
+</html>
