@@ -2,7 +2,7 @@
 	"name" : "Gamelan",
 	"version" : 1,
 	"creationdate" : 3827517349,
-	"modificationdate" : 3827517374,
+	"modificationdate" : 3828357987,
 	"viewrect" : [ 327.0, 154.0, 300.0, 500.0 ],
 	"autoorganize" : 1,
 	"hideprojectwindow" : 0,
@@ -15,6 +15,20 @@
 				"local" : 1,
 				"toplevel" : 1
 			}
+,
+			"main.maxpat" : 			{
+				"kind" : "patcher",
+				"local" : 1
+			}
+,
+			"logosAndXenix.maxpat" : 			{
+				"kind" : "patcher",
+				"local" : 1
+			}
+
+		}
+,
+		"code" : 		{
 
 		}
 
