@@ -244,6 +244,7 @@ class MatrixFlooder {
     ) {
         try {
             const quantizer = await maxAPI.getDict(this.quantizerDictId)
+            
             const notes = quantizer[from.toString()] || ([] as NoteParams[])
 
             const newNotes: ActiveNote[] = (notes as NoteParams[]).map(

@@ -55,7 +55,7 @@
 
             <div class="output" id="output"></div>
 
-            <div class="startNode" id="startNode">
+            <!-- <div class="startNode" id="startNode">
                 <p>start node</p>
                 <input value="0" class="startNodeInput" id="startNodeInput" />
             </div>
@@ -83,7 +83,7 @@
                     <option selected value="1/8">8th</option>
                     <option value="1/16">16th</option>
                 </select>
-            </div>
+            </div> -->
         </div>
 
         <script>
@@ -215,7 +215,7 @@
                         this.currentPosition % this.sectorLength
                     const coefficient = positionInSector / this.sectorLength
 
-                    // Get input values with validation
+                    /* // Get input values with validation
                     const startNode = Math.min(
                         24,
                         Math.max(
@@ -236,7 +236,7 @@
                             120,
                     )
                     const beatDuration =
-                        document.getElementById('beatDuration').value
+                        document.getElementById('beatDuration').value */
 
                     // Update output
                     this.output.textContent = `Sector: ${currentSector}, Coefficient: ${coefficient.toFixed(2)}`
@@ -247,10 +247,10 @@
                         currentSector + 1,
                         currentSector + 2,
                         coefficient,
-                        startNode,
-                        power,
-                        bpm,
-                        beatDuration,
+                        // startNode,
+                        // power,
+                        // bpm,
+                        // beatDuration,
                     )
                 }
             }

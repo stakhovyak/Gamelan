@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 34.0, 77.0, 1511.0, 921.0 ],
+		"rect" : [ 995.0, 85.0, 890.0, 912.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
 				"box" : 				{
@@ -385,7 +385,7 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 5.0, 11.0, 863.0, 653.0 ],
+					"patching_rect" : [ 5.0, 11.0, 863.0, 815.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -406,7 +406,7 @@
 
 			}
  ],
-		"originid" : "pat-79",
+		"originid" : "pat-54",
 		"dependency_cache" : [ 			{
 				"name" : "logosAndXenix.maxpat",
 				"bootpath" : "~/Documents/Max 9/Projects/Gamelan/src/patchers",
