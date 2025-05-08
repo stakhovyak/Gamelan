@@ -1,90 +1,96 @@
 <html>
-<head>
-    <style>
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            max-width: 600px;
-            margin: 20px auto;
-        }
-        
-        .cell {
-            position: relative;
-            aspect-ratio: 1;
-            border: 1px solid #ccc;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
+    <head>
+        <style>
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 10px;
+                max-width: 600px;
+                margin: 20px auto;
+            }
 
-        .cell:hover {
-            background-color: #f0f0f0;
-        }
+            .cell {
+                position: relative;
+                aspect-ratio: 1;
+                border: 1px solid #ccc;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
 
-        .cell.selected {
-            background-color: #e0e0ff;
-        }
+            .cell:hover {
+                background-color: #f0f0f0;
+            }
 
-        .input-field {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 2px solid #666;
-            text-align: center;
-            padding: 5px;
-        }
+            .cell.selected {
+                background-color: #e0e0ff;
+            }
 
-        .beat-duration {
-            top: -10px;
-            left: -10px;
-            background: #ffcccc;
-        }
+            .input-field {
+                position: absolute;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                border: 2px solid #666;
+                text-align: center;
+                padding: 5px;
+            }
 
-        .power {
-            bottom: -10px;
-            right: -10px;
-            background: #ccffcc;
-        }
+            .beat-duration {
+                top: -10px;
+                left: -10px;
+                background: #ffcccc;
+            }
 
-        #controls {
-            text-align: center;
-            margin: 20px;
-        }
+            .power {
+                bottom: -10px;
+                right: -10px;
+                background: #ccffcc;
+            }
 
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+            #controls {
+                text-align: center;
+                margin: 20px;
+            }
 
-        .bpm-input {
-            margin: 10px;
-            padding: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="grid" id="matrixGrid"></div>
-    <div id="controls">
-        <input type="number" class="bpm-input" id="bpmInput" value="120" placeholder="BPM">
-        <!-- <button onclick="outputMessage()">Generate Message</button> -->
-    </div>  
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+                cursor: pointer;
+            }
 
-    <script>
-        // Create 5x5 grid with input fields
-        const grid = document.getElementById('matrixGrid');
-        let selectedCell = null;
+            .bpm-input {
+                margin: 10px;
+                padding: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="grid" id="matrixGrid"></div>
+        <div id="controls">
+            <input
+                type="number"
+                class="bpm-input"
+                id="bpmInput"
+                value="120"
+                placeholder="BPM"
+            />
+            <!-- <button onclick="outputMessage()">Generate Message</button> -->
+        </div>
 
-        for (let y = 0; y < 5; y++) {
-            for (let x = 0; x < 5; x++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.dataset.x = x;
-                cell.dataset.y = y;
-                
-                // Add input fields
-                cell.innerHTML = `
+        <script>
+            // Create 5x5 grid with input fields
+            const grid = document.getElementById('matrixGrid')
+            let selectedCell = null
+
+            for (let y = 0; y < 5; y++) {
+                for (let x = 0; x < 5; x++) {
+                    const cell = document.createElement('div')
+                    cell.className = 'cell'
+                    cell.dataset.x = x
+                    cell.dataset.y = y
+
+                    // Add input fields
+                    cell.innerHTML = `
                     <select class="input-field beat-duration" data-type="beatDuration">
                         <option value="16/1">16</option>
                         <option value="8/1">8</option>
@@ -98,53 +104,52 @@
                     </select>
                     <input type="number" class="input-field power" 
                            data-type="power" value="20" min="1" max="100">
-                `;
+                `
 
-                cell.addEventListener('click', function() {
-                    // Remove selection from previous cell
-                    if (selectedCell) selectedCell.classList.remove('selected');
-                    
-                    // Set new selection
-                    this.classList.add('selected');
-                    selectedCell = this;
-                    outputMessage();
-                });
+                    cell.addEventListener('click', function () {
+                        // Remove selection from previous cell
+                        if (selectedCell)
+                            selectedCell.classList.remove('selected')
 
-                grid.appendChild(cell);
-                
-            }
-        }
+                        // Set new selection
+                        this.classList.add('selected')
+                        selectedCell = this
+                        outputMessage()
+                    })
 
-        function xyToIndex(x, y) {
-            return y * 5 + x;
-        }
-
-        function outputMessage() {
-            if (!selectedCell) {
-                alert('Please select a cell first!');
-                return;
+                    grid.appendChild(cell)
+                }
             }
 
-            const x = parseInt(selectedCell.dataset.x);
-            const y = parseInt(selectedCell.dataset.y);
-            const startNode = xyToIndex(x, y);
-            
-            const beatDuration = selectedCell.querySelector('[data-type="beatDuration"]').value;
-            const power = selectedCell.querySelector('[data-type="power"]').value;
-            const bpm = document.getElementById('bpmInput').value;
+            function xyToIndex(x, y) {
+                return y * 5 + x
+            }
 
-            const message = [power, beatDuration, startNode, bpm];
+            function outputMessage() {
+                if (!selectedCell) {
+                    alert('Please select a cell first!')
+                    return
+                }
 
-            window.max.outlet(
-                startNode,
-                power,
-                bpm,
-                beatDuration
-            )
+                const x = parseInt(selectedCell.dataset.x)
+                const y = parseInt(selectedCell.dataset.y)
+                const startNode = xyToIndex(x, y)
 
-            // console.log('Output Message:', message);
-            //alert(`Generated message:\n${message.join(', ')}`);
-        }
-    </script>
-</body>
+                const beatDuration = selectedCell.querySelector(
+                    '[data-type="beatDuration"]',
+                ).value
+                const power = selectedCell.querySelector(
+                    '[data-type="power"]',
+                ).value
+                const bpm = document.getElementById('bpmInput').value
+
+                const message = [power, beatDuration, startNode, bpm]
+
+                window.max.outlet(startNode, power, bpm, beatDuration)
+
+                // console.log('Output Message:', message);
+                //alert(`Generated message:\n${message.join(', ')}`);
+            }
+        </script>
+    </body>
 </html>

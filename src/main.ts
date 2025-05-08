@@ -203,13 +203,13 @@ class MatrixFlooder {
         beatDuration: BeatDuration,
     ) {
         if (power <= 0) {
-            maxAPI.post(`Power exhausted at ${start}`)
+            // maxAPI.post(`Power exhausted at ${start}`)
             return
         }
 
         const connections = this.getConnections(graph, start)
         if (connections.length === 0) {
-            maxAPI.post(`Dead end at ${start}`)
+            // maxAPI.post(`Dead end at ${start}`)
             return
         }
 
@@ -244,7 +244,7 @@ class MatrixFlooder {
     ) {
         try {
             const quantizer = await maxAPI.getDict(this.quantizerDictId)
-            
+
             const notes = quantizer[from.toString()] || ([] as NoteParams[])
 
             const newNotes: ActiveNote[] = (notes as NoteParams[]).map(
@@ -279,13 +279,17 @@ class MatrixFlooder {
 
     private outputActiveNotes() {
         const output = this.activeNotes.map((note) => ({
-            cell: note.cellIndex,
+            // cell: note.cellIndex,
             pitch: `${note.pitch.note}${note.pitch.octave}`,
-            adsr: [note.A, note.D, note.S, note.R],
+            gate: note.S,
         }))
 
-        maxAPI.post(JSON.stringify(output))
+        // maxAPI.post(JSON.stringify(output))
         // maxAPI.outlet("activeNotes", output);
+        /* if (output.length === 0 || !output) {
+            maxAPI.outlet(output)
+        } */
+       maxAPI.outlet(output)
     }
 }
 
